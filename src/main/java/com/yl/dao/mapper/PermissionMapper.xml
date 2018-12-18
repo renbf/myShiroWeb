@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.dao.PermissionDao">
+
+<resultMap id="PermissionMap" type="com.yl.modle.Permission">
+<result property="permissionId" column="permission_id" />
+<result property="permissionUrl" column="permission_url" />
+<result property="permissionDeac" column="permission_deac" />
+</resultMap>
+
+<sql id="PermissionColumns">
+permission_id,
+permission_url,
+permission_deac
+</sql>
+
+	<select id="queryPermissionAll" resultMap="PermissionMap" >
+		select <include refid="PermissionColumns"></include> from permission
+	</select>
+</mapper>

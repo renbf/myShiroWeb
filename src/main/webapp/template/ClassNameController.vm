@@ -1,0 +1,33 @@
+package com.yl.controller;
+
+import com.yl.modle.${className};
+import com.yl.service.I${className}Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+/**
+ * @author rbf
+ * @createdate ${now}
+ * @desriction
+ */
+@Controller
+public class ${className}Controller {
+@Autowired
+private I${className}Service ${classNameField}Service;
+@RequestMapping(value = "/get${className}List")
+public ModelAndView get${className}List(HttpServletRequest request) {
+        List<${className}> list = ${classNameField}Service.query${className}All();
+        ModelAndView mv = new ModelAndView("${classNameField}");
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("name", "1fds");
+        mv.addAllObjects(result);
+        return mv;
+        }
+}

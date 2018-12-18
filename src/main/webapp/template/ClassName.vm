@@ -1,0 +1,20 @@
+package com.yl.modle;
+
+import java.util.Date;
+/**
+ * @author rbf
+ * @createdate ${now}
+ * @desriction
+ */
+public class ${className} {
+#if($beanMapperList)
+#foreach($element in $beanMapperList)
+#if($element.javabz)
+/**
+*$element.javabz
+*/
+#end
+private $element.javaType $element.javaName;
+#end
+#end
+}

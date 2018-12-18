@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="GBK"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.dao.${className}Dao">
+
+<resultMap id="${className}Map" type="com.yl.modle.${className}">
+#if($beanMapperList)
+#foreach($element in $beanMapperList)
+<result property="$element.javaName" column="$element.columnName" />
+#end
+#end
+</resultMap>
+
+<sql id="${className}Columns">
+#if($beanMapperList)
+#foreach($element in $beanMapperList)
+#if($velocityCount == $beanMapperList.size())
+$element.columnName
+#else
+$element.columnName,
+#end
+#end
+#end
+</sql>
+
+	<select id="query${className}All" resultMap="${className}Map" >
+		select <include refid="${className}Columns"></include> from ${table_name}
+	</select>
+</mapper>

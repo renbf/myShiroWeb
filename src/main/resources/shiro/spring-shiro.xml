@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<!-- custom shiro session listener -->
+	<bean id="customShiroSessionDAO" class="com.yl.shiro.session.CustomShiroSessionDAO">
+	    <property name="shiroSessionRepository" ref="jedisShiroSessionRepository"/>
+	    <property name="sessionIdGenerator" ref="sessionIdGenerator"/>
+	</bean>
+	<!-- session 创建、删除、查询 -->
+	<bean id="jedisShiroSessionRepository" class="com.yl.shiro.session.impl.JedisShiroSessionRepository" >
+		 <property name="redisTemplate" ref="redisTemplate" />
+		<property name="jdkSerializationRedisSerializer" ref="jdkSerializationRedisSerializer" />
+		<property name="stringRedisSerializer" ref="stringRedisSerializer" />
+	</bean>
+	<!-- 会话Session ID生成器 -->
+	<bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator"/>
+    
+    <!-- custom shiro session listener -->
+	<bean id="customSessionListener" class="com.yl.shiro.listener.CustomSessionListener">
+	    <property name="shiroSessionRepository" ref="jedisShiroSessionRepository"/>
+	</bean>
+	
+    <!-- 会话Cookie模板 -->
+	<bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+		<!--cookie的name，我故意取名叫xxxxbaidu -->
+	    <constructor-arg value="v_v-s-baidu"/>
+	    <property name="httpOnly" value="true"/>
+	    <!--cookie的有效时间 -->
+	    <property name="maxAge" value="-1"/>
+	    <!-- 配置存储Session Cookie的domain为 一级域名
+	    <property name="domain" value=".itboy.net"/>
+	     -->
+	</bean>
+	
+	<!-- 会话验证调度器 -->
+	<bean id="sessionValidationScheduler" class="org.apache.shiro.session.mgt.ExecutorServiceSessionValidationScheduler">
+		 <!-- 间隔多少时间检查，不配置是60分钟 -->
+	     <property name="interval" value="${session.validate.timespan}"/>
+	     <property name="sessionManager" ref="sessionManager"/>
+	</bean>
+	
+	<!-- 用户信息记住我功能的相关配置 -->
+	<bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+	    <constructor-arg value="v_v-re-baidu"/>
+	    <property name="httpOnly" value="true"/>
+	    <!-- 配置存储rememberMe Cookie的domain为 一级域名
+	    <property name="domain" value=".itboy.net"/>
+	     -->
+	    <property name="maxAge" value="2592000"/><!-- 30天时间，记住我30天 -->
+	</bean>
+
+    <!-- rememberMe管理器 -->
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <!-- rememberMe cookie加密的密钥 建议每个项目都不一样 默认AES算法 密钥长度（128 256 512 位）-->
+        <property name="cipherKey"
+                  value="#{T(org.apache.shiro.codec.Base64).decode('3AvVhmFLUs0KTA3Kprsdag==')}"/>
+        <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+
+
+
+	<bean id="cacheManager" class="com.yl.shiro.cache.SpringRedisCache">
+		<property name="redisTemplate" ref="redisTemplate" />
+		<property name="jdkSerializationRedisSerializer" ref="jdkSerializationRedisSerializer" />
+		<property name="stringRedisSerializer" ref="stringRedisSerializer" />
+		<property name="name" value="content" />
+		<!-- name对应的名称要在类或方法的注解中使用 -->
+	</bean>
+	
+	<!-- 用户缓存 -->
+	<bean id="customShiroCacheManager" class="com.yl.shiro.cache.CustomShiroCacheManager">
+        <property name="cacheManager" ref="cacheManager"></property>
+	</bean>
+	
+	<!-- 授权 认证 -->
+	<bean id="sampleRealm" class="com.yl.shiro.realm.SampleRealm" >
+	<!-- <constructor-arg name="cacheManager" ref="customShiroCacheManager" /> -->
+	</bean>
+
+	<!-- Session Manager -->
+	<bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+		<!-- 相隔多久检查一次session的有效性   -->
+	 	<property name="sessionValidationInterval" value="1800000"/>  
+	 	 <!-- session 有效时间为半小时 （毫秒单位）-->  
+	<property name="globalSessionTimeout" value="1800000"/>
+	   <property name="sessionDAO" ref="customShiroSessionDAO"/>
+	   <!-- session 监听，可以多个。 -->
+	   <property name="sessionListeners">
+	       <list>
+	           <ref bean="customSessionListener"/>
+	       </list>
+	   </property>
+	   <!-- 间隔多少时间检查，不配置是60分钟 -->	
+	  <property name="sessionValidationScheduler" ref="sessionValidationScheduler"/>
+	  <!-- 是否开启 检测，默认开启 -->
+	  <property name="sessionValidationSchedulerEnabled" value="true"/>
+	   <!-- 是否删除无效的，默认也是开启 -->
+	  <property name="deleteInvalidSessions" value="true"/>
+		<!-- 会话Cookie模板 -->
+	   <property name="sessionIdCookie" ref="sessionIdCookie"/>
+	</bean>
+	<!-- 安全管理器 -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="sampleRealm"/>
+        <property name="sessionManager" ref="sessionManager"/>
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+        <property name="cacheManager" ref="customShiroCacheManager"/>
+    </bean>
+	
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<!-- 必须设置 -->
+		<property name="securityManager" ref="securityManager" />
+		<!-- 登录的url，如果不设置默认会自动寻找web工程根目录下的“/login。jsp”页面 -->
+		<property name="loginUrl" value="/adminUser/loginIndex" />
+		<!--	登录成功跳转的url	-->
+		<property name="successUrl" value="/adminUser/index" />
+		<!--	未授权的url	-->
+		<property name="unauthorizedUrl" value="/adminUser/403" />
+		<!--	初始配置，现采用自定义	-->
+		<property name="filterChainDefinitions" >
+			<value>
+			<!--	配置退出过滤器，其中具体的退出代码shiro已经替我们实现了	-->
+				<!--	静态文件不拦截	-->
+				/plugins/**=anon
+				/scripts/**=anon
+				/images/**=anon
+				/styles/**=anon
+				/fonts/**=anon
+				/data/**=anon
+				/druid/**=anon
+				<!--	严重注意此处是否需要配置	-->
+				/adminUser/login = anon
+				/adminUser/logout = logout
+				<!--过滤链定义，从上向下顺序执行，一般将/**放在最下边
+				authc：所有url都必须认证通过才可以访问；anon：所有url都可以匿名访问	-->
+				/** = authc
+           </value>
+		</property>
+		<!--	拦截器	-->
+		<property name="filters">
+            <map>
+                <!--退出过滤器-->
+                <entry key="logout" value-ref="systemLogoutFilter" />
+            </map>
+        </property>
+		<!-- 读取初始自定义权限内容-->
+       <!-- <property name="filterChainDefinitions" value="#{shiroManager.loadFilterChainDefinitions()}"/>   
+       <property name="filters">
+           <util:map>
+              <entry key="login" value-ref="login"></entry>
+              <entry key="role" value-ref="role"></entry>
+              <entry key="simple" value-ref="simple"></entry>
+              <entry key="permission" value-ref="permission"></entry>
+              <entry key="kickout" value-ref="kickoutSessionFilter"></entry>
+           </util:map>
+       </property> -->
+	</bean>
+	
+	
+	
+	<!-- ============================================================================ -->
+
+</beans>
+

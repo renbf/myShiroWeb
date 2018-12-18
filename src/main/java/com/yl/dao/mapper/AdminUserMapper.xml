@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.dao.AdminUserDao">
+
+<resultMap id="AdminUserMap" type="com.yl.modle.AdminUser">
+<result property="adminId" column="admin_id" />
+<result property="adminUserName" column="admin_user_name" />
+<result property="adminName" column="admin_name" />
+<result property="password" column="password" />
+<result property="status" column="status" />
+<result property="roleId" column="role_id" />
+<result property="addTime" column="add_time" />
+</resultMap>
+
+<sql id="AdminUserColumns">
+admin_id,
+admin_user_name,
+admin_name,
+password,
+status,
+role_id,
+add_time
+</sql>
+
+	<select id="queryAdminUserAll" resultMap="AdminUserMap" >
+		select <include refid="AdminUserColumns"></include> from admin_user
+	</select>
+	
+	<select id="queryAdminUserByUserName" resultMap="AdminUserMap" >
+		select <include refid="AdminUserColumns"></include> from admin_user
+		where admin_user_name = #{userName}
+	</select>
+	
+	
+</mapper>

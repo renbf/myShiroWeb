@@ -1,0 +1,12 @@
+package com.yl.service;
+
+import java.util.List;
+import com.yl.modle.${className};
+/**
+ * @author rbf
+ * @createdate ${now}
+ * @desriction
+ */
+public interface I${className}Service {
+public List<${className}> query${className}All();
+}

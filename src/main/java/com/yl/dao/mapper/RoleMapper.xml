@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yl.dao.RoleDao">
+
+<resultMap id="RoleMap" type="com.yl.modle.Role">
+<result property="roleId" column="role_id" />
+<result property="roleName" column="role_name" />
+<result property="type" column="type" />
+<result property="permissionId" column="permission_id" />
+</resultMap>
+
+<sql id="RoleColumns">
+role_id,
+role_name,
+type,
+permission_id
+</sql>
+
+	<select id="queryRoleAll" resultMap="RoleMap" >
+		select <include refid="RoleColumns"></include> from role
+	</select>
+</mapper>

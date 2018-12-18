@@ -1,0 +1,24 @@
+package com.yl.service.impl;
+
+
+import com.yl.dao.${className}Dao;
+import com.yl.modle.${className};
+import com.yl.service.I${className}Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+/**
+ * @author rbf
+ * @createdate ${now}
+ * @desriction
+ */
+@Service
+public class ${className}ServiceImpl implements I${className}Service{
+@Autowired
+private ${className}Dao ${classNameField}Dao;
+
+public List<${className}> query${className}All(){
+
+        return ${classNameField}Dao.query${className}All();
+        }
+}
