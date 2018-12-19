@@ -38,7 +38,7 @@ public class RedisCache <K, V> implements Cache<K, V>{
 	}
 
 	private String getCacheKey(Object key) {
-		return this.REDIS_SHIRO_CACHE + getName() + ":" + key;
+		return this.REDIS_SHIRO_CACHE + getName() + ":" + key.getClass().getName();
 	}
 	
 	@Override
