@@ -14,4 +14,5 @@
     <import resource="classpath:spring/spring-data.xml" />
     <import resource="classpath:shiro/spring-shiro.xml" />
     <import resource="classpath:redis/spring-redis.xml" />
+    <import resource="classpath:spring/spring-cxf.xml" />
 </beans>
