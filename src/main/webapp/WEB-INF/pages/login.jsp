@@ -11,7 +11,7 @@
     </script>
 </head>
 <body>
-	<form id="userform" name="userform" method="post" action="${pageContext.request.contextPath}/adminUser/login"onsubmit="return check();">
+	<form id="userform" name="userform" method="post" action="${pageContext.request.contextPath}/adminUser/login" onsubmit="return check();">
 		<div class="login_box">
 			<label>用户名：</label> <input id="userName" type="text" name="userName"
 				placeholder="请输入用户名" class="login_input">
