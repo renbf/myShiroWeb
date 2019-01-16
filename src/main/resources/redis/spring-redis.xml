@@ -1,16 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="
-    		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
-			http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
-			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
-			http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.0.xsd
-			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd"
-	default-lazy-init="false">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:context="http://www.springframework.org/schema/context"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd">
 		
 	 <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
 		 <property name="maxIdle" value="${redis.maxIdle}" /><!-- 最大闲置 -->
@@ -29,14 +24,53 @@
 	    <constructor-arg index="4" value="你的密码" name="password" type="java.lang.String"/>
 	   
 	</bean> -->
+	
+	<bean id="redisClusterConfiguration"
+    class="org.springframework.data.redis.connection.RedisClusterConfiguration">
+    <property name="maxRedirects" value="3"></property>
+    <!-- 节点配置 -->
+    <property name="clusterNodes">
+        <set>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host1}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port1}"></constructor-arg>
+            </bean>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host2}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port2}"></constructor-arg>
+            </bean>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host3}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port3}"></constructor-arg>
+            </bean>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host4}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port4}"></constructor-arg>
+            </bean>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host5}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port5}"></constructor-arg>
+            </bean>
+            <bean class="org.springframework.data.redis.connection.RedisClusterNode">
+                <constructor-arg name="host" value="${redis.host6}"></constructor-arg>
+                <constructor-arg name="port" value="${redis.port6}"></constructor-arg>
+            </bean>
+        </set>
+    </property>
+</bean>
+
 	<!-- redis服务器中心 -->
     <bean id="connectionFactory"
         class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
-        <property name="poolConfig" ref="jedisPoolConfig" />
+        <!-- 单机模式 -->
+        <!-- <property name="poolConfig" ref="jedisPoolConfig" />
         <property name="port" value="${redis.port}" />
         <property name="hostName" value="${redis.host}" />
         <property name="password" value="${redis.password}" />
-        <property name="timeout" value="${redis.timeout}"></property>
+        <property name="timeout" value="${redis.timeout}"></property> -->
+        <!-- 集群模式 -->
+        <constructor-arg ref="redisClusterConfiguration" />
+    	<constructor-arg ref="jedisPoolConfig" />
     </bean>
     <bean id="jdkSerializationRedisSerializer" class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer" />
     <bean id="stringRedisSerializer" class="org.springframework.data.redis.serializer.StringRedisSerializer" />
