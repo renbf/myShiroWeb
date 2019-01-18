@@ -2,19 +2,14 @@ package com.yl.shiro.session.impl;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import com.yl.redis.RedisUtil;
+import com.yl.redis.SerializeUtils;
 import com.yl.shiro.session.SessionStatus;
 import com.yl.shiro.session.ShiroSessionRepository;
 /**
@@ -36,43 +31,16 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
 	 */
 	public static final String SESSION_STATUS ="session-online-status";
 	
-    private RedisTemplate<String, Object> redisTemplate;
-	private JdkSerializationRedisSerializer jdkSerializationRedisSerializer;
-	private StringRedisSerializer stringRedisSerializer;
-
+	private RedisUtil redisUtil;
 	
-	
-    public RedisTemplate<String, Object> getRedisTemplate() {
-		return redisTemplate;
-	}
-
-	public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
-		this.redisTemplate = redisTemplate;
-	}
-
-	public JdkSerializationRedisSerializer getJdkSerializationRedisSerializer() {
-		return jdkSerializationRedisSerializer;
-	}
-
-	public void setJdkSerializationRedisSerializer(JdkSerializationRedisSerializer jdkSerializationRedisSerializer) {
-		this.jdkSerializationRedisSerializer = jdkSerializationRedisSerializer;
-	}
-
-	public StringRedisSerializer getStringRedisSerializer() {
-		return stringRedisSerializer;
-	}
-
-	public void setStringRedisSerializer(StringRedisSerializer stringRedisSerializer) {
-		this.stringRedisSerializer = stringRedisSerializer;
-	}
 
 	@Override
     public void saveSession(Session session) {
         if (session == null || session.getId() == null)
             throw new NullPointerException("session is empty");
         try {
-            final byte[] key = stringRedisSerializer.serialize(buildRedisSessionKey(session.getId()));
-            
+        	String sessionid = buildRedisSessionKey(session.getId());
+            byte[] key = SerializeUtils.serializeStr(sessionid,SerializeUtils.UTF_8);
             
             //不存在才添加。
             if(null == session.getAttribute(SESSION_STATUS)){
@@ -81,7 +49,7 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
             	session.setAttribute(SESSION_STATUS, sessionStatus);
             }
             
-            final byte[] value = jdkSerializationRedisSerializer.serialize(session);
+            byte[] value = SerializeUtils.serialize(session);
 
 
             /**这里是我犯下的一个严重问题，但是也不会是致命，
@@ -100,18 +68,8 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
             /*
             直接使用 (int) (session.getTimeout() / 1000) 的话，session失效和redis的TTL 同时生效
              */
-            final int liveTime = (int) (session.getTimeout() / 1000);
-            redisTemplate.execute(new RedisCallback<Long>() {
-                @Override
-                public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                	connection.select(DB_INDEX);
-                    connection.set(key, value);
-                    if (liveTime > 0) {
-                        connection.expire(key, liveTime);
-                    }
-                    return 1L;
-                }
-            });
+            int liveTime = (int) (session.getTimeout() / 1000);
+            redisUtil.setEx(key, liveTime, value);
         } catch (Exception e) {
         	logger.error(String.format("save session error，id:[%s]",session.getId()),e);
         }
@@ -123,15 +81,9 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
             throw new NullPointerException("session id is empty");
         }
         try {
-            final byte[] key = stringRedisSerializer.serialize(buildRedisSessionKey(id));
-            redisTemplate.execute(new RedisCallback<Long>() {
-                @Override
-                public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                	connection.select(DB_INDEX);
-                    connection.del(key);
-                    return 1L;
-                }
-            });
+        	String sessionid = buildRedisSessionKey(id);
+            byte[] key = SerializeUtils.serializeStr(sessionid,SerializeUtils.UTF_8);
+            redisUtil.del(key);
         } catch (Exception e) {
         	logger.error(String.format("删除session出现异常，id:[%s]",id),e);
         }
@@ -140,19 +92,15 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
    
 	@Override
     public Session getSession(Serializable id) {
-        if (id == null)
-        	 throw new NullPointerException("session id is empty");
+        if (id == null){
+        	throw new NullPointerException("session id is empty");
+        }
         Session session = null;
         try {
-        	final byte[] key = stringRedisSerializer.serialize(buildRedisSessionKey(id));
-        	session = (Session)redisTemplate.execute(new RedisCallback<Object>() {
-                @Override
-                public Object doInRedis(RedisConnection connection) throws DataAccessException {
-                	connection.select(DB_INDEX);
-                    byte[] value = connection.get(key);
-                    return jdkSerializationRedisSerializer.deserialize(value);
-                }
-            });
+        	String sessionid = buildRedisSessionKey(id);
+        	byte[] key = SerializeUtils.serializeStr(sessionid,SerializeUtils.UTF_8);
+        	byte[] value = redisUtil.get(key);
+        	session = (Session)SerializeUtils.unserialize(value);
         } catch (Exception e) {
         	logger.error(String.format("获取session异常，id:[%s]",id),e);
         }
@@ -163,29 +111,27 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
     public Collection<Session> getAllSessions() {
     	Collection<Session> sessions = null;
 		try {
-			final Set<String> keys = redisTemplate.keys(REDIS_SHIRO_ALL);
-			sessions = (Collection<Session>)redisTemplate.execute(new RedisCallback<Collection<Session>>() {
-                @Override
-                public Collection<Session> doInRedis(RedisConnection connection) throws DataAccessException {
-                	Set<Session> sessions = new HashSet<Session>();
-                	connection.select(DB_INDEX);
-                	for(String key:keys) {
-                		byte[] keyb = stringRedisSerializer.serialize(key);
-                		byte[] value = connection.get(keyb);
-                		Session session = (Session)jdkSerializationRedisSerializer.deserialize(value);
-                		sessions.add(session);
-                	}
-                    return sessions;
-                }
-            });
+			Set<String> keys = redisUtil.keys(REDIS_SHIRO_ALL);
+			for(String key:keys) {
+				Session session = (Session)redisUtil.getObject(key);
+				sessions.add(session);
+        	}
 		} catch (Exception e) {
 			logger.error("获取全部session异常",e);
 		}
-       
         return sessions;
     }
 
     private String buildRedisSessionKey(Serializable sessionId) {
         return REDIS_SHIRO_SESSION + sessionId;
     }
+
+	public RedisUtil getRedisUtil() {
+		return redisUtil;
+	}
+
+	public void setRedisUtil(RedisUtil redisUtil) {
+		this.redisUtil = redisUtil;
+	}
+    
 }
