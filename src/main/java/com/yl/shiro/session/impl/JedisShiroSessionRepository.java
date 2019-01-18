@@ -7,11 +7,13 @@ import java.util.Set;
 import org.apache.shiro.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import com.yl.redis.RedisUtil;
 import com.yl.redis.SerializeUtils;
 import com.yl.shiro.session.SessionStatus;
 import com.yl.shiro.session.ShiroSessionRepository;
+
+import redis.clients.jedis.JedisCluster;
 /**
  * Session 管理
  * @author sojson.com
@@ -30,8 +32,8 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
 	 * session status 
 	 */
 	public static final String SESSION_STATUS ="session-online-status";
-	
-	private RedisUtil redisUtil;
+	@Autowired
+	private JedisCluster jedisCluster;
 	
 
 	@Override
@@ -69,7 +71,7 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
             直接使用 (int) (session.getTimeout() / 1000) 的话，session失效和redis的TTL 同时生效
              */
             int liveTime = (int) (session.getTimeout() / 1000);
-            redisUtil.setEx(key, liveTime, value);
+            jedisCluster.setex(key, liveTime, value);
         } catch (Exception e) {
         	logger.error(String.format("save session error，id:[%s]",session.getId()),e);
         }
@@ -83,7 +85,7 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
         try {
         	String sessionid = buildRedisSessionKey(id);
             byte[] key = SerializeUtils.serializeStr(sessionid,SerializeUtils.UTF_8);
-            redisUtil.del(key);
+            jedisCluster.del(key);
         } catch (Exception e) {
         	logger.error(String.format("删除session出现异常，id:[%s]",id),e);
         }
@@ -99,7 +101,7 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
         try {
         	String sessionid = buildRedisSessionKey(id);
         	byte[] key = SerializeUtils.serializeStr(sessionid,SerializeUtils.UTF_8);
-        	byte[] value = redisUtil.get(key);
+        	byte[] value = jedisCluster.get(key);
         	session = (Session)SerializeUtils.unserialize(value);
         } catch (Exception e) {
         	logger.error(String.format("获取session异常，id:[%s]",id),e);
@@ -111,9 +113,11 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
     public Collection<Session> getAllSessions() {
     	Collection<Session> sessions = null;
 		try {
-			Set<String> keys = redisUtil.keys(REDIS_SHIRO_ALL);
+			Set<String> keys = jedisCluster.hkeys(REDIS_SHIRO_ALL);
 			for(String key:keys) {
-				Session session = (Session)redisUtil.getObject(key);
+				byte[] keyb = SerializeUtils.serializeStr(key, SerializeUtils.UTF_8);
+				byte[] valueb = jedisCluster.get(keyb);
+				Session session = (Session)SerializeUtils.unserialize(valueb);
 				sessions.add(session);
         	}
 		} catch (Exception e) {
@@ -125,13 +129,5 @@ public class JedisShiroSessionRepository implements ShiroSessionRepository {
     private String buildRedisSessionKey(Serializable sessionId) {
         return REDIS_SHIRO_SESSION + sessionId;
     }
-
-	public RedisUtil getRedisUtil() {
-		return redisUtil;
-	}
-
-	public void setRedisUtil(RedisUtil redisUtil) {
-		this.redisUtil = redisUtil;
-	}
     
 }

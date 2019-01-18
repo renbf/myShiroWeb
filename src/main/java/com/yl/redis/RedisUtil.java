@@ -17,7 +17,6 @@ import redis.clients.util.SafeEncoder;
 public class RedisUtil {
 	
 	private Logger logger = LoggerFactory.getLogger(RedisUtil.class);
-	@Autowired
 	private JedisPool jedisPool;
 
 	

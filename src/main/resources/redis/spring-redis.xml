@@ -24,25 +24,51 @@
         <property name="testOnBorrow" value="${redis.testOnBorrow}"/>
     </bean>
     <!-- jedis客户端单机版 -->
-    <bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="close">
+    <!-- <bean id="jedisPool" class="redis.clients.jedis.JedisPool" destroy-method="close">
         <constructor-arg name="host" value="${redis.host}"></constructor-arg>
         <constructor-arg name="port" value="${redis.port}"></constructor-arg>
         <constructor-arg name="timeout" value="${redis.timeout}" type="int" />
         <constructor-arg name="password" value="${redis.password}" />
         <constructor-arg name="database" value="${redis.database}" type="int" />
         <constructor-arg name="poolConfig" ref="jedisPoolConfig"></constructor-arg>
-    </bean>
-   
-    <!-- <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">
-        <property name="connectionFactory" ref="connectionFactory" />
-        <property name="keySerializer" ref="stringRedisSerializer" />
-        <property name="valueSerializer" ref="jdkSerializationRedisSerializer" />
     </bean> -->
-
-
-    <bean id="redisUtil" class="com.yl.redis.RedisUtil">
-        <property name="jedisPool" ref="jedisPool" />
+   
+    <bean id="jedisCluster" class="redis.clients.jedis.JedisCluster">
+        <constructor-arg name="nodes">
+            <set>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host1}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port1}"></constructor-arg>
+                </bean>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host2}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port2}"></constructor-arg>
+                </bean>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host3}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port3}"></constructor-arg>
+                </bean>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host4}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port4}"></constructor-arg>
+                </bean>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host5}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port5}"></constructor-arg>
+                </bean>
+                <bean class="redis.clients.jedis.HostAndPort">
+                    <constructor-arg name="host" value="${redis.host6}"></constructor-arg>
+                    <constructor-arg name="port" value="${redis.port6}"></constructor-arg>
+                </bean>
+            </set>
+        </constructor-arg>
+        <constructor-arg name="poolConfig" ref="jedisPoolConfig"></constructor-arg>
     </bean>
+
+
+    <!-- <bean id="redisUtil" class="com.yl.redis.RedisUtil">
+        <property name="jedisCluster" ref="jedisCluster" />
+    </bean> -->
     
     
 </beans>

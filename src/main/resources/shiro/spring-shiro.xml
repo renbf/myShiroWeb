@@ -17,7 +17,6 @@
 	</bean>
 	<!-- session 创建、删除、查询 -->
 	<bean id="jedisShiroSessionRepository" class="com.yl.shiro.session.impl.JedisShiroSessionRepository" >
-		 <property name="redisUtil" ref="redisUtil" />
 	</bean>
 	<!-- 会话Session ID生成器 -->
 	<bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator"/>
@@ -69,7 +68,6 @@
 
 
 	<bean id="cacheManager" class="com.yl.shiro.cache.SpringRedisCache">
-		<property name="redisUtil" ref="redisUtil" />
 		<property name="name" value="content" />
 		<!-- name对应的名称要在类或方法的注解中使用 -->
 	</bean>
