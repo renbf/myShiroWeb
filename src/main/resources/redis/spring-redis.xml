@@ -34,7 +34,7 @@
     </bean> -->
    
     <bean id="jedisCluster" class="redis.clients.jedis.JedisCluster">
-        <constructor-arg name="nodes">
+        <constructor-arg name="jedisClusterNode">
             <set>
                 <bean class="redis.clients.jedis.HostAndPort">
                     <constructor-arg name="host" value="${redis.host1}"></constructor-arg>
@@ -62,6 +62,14 @@
                 </bean>
             </set>
         </constructor-arg>
+        <!--设置连接超时时间 -->
+        <constructor-arg name="connectionTimeout" value="${redis.timeout}"/>
+        <!--设置网络通信超时时间 -->
+        <constructor-arg name="soTimeout" value="${redis.soTimeout}"/>
+        <!--设置集群访问密码 -->
+        <constructor-arg name="password" value="${redis.password}"/>
+        <!--设置最大重试次数 -->
+        <constructor-arg name="maxAttempts" value="${redis.attempts}"/>
         <constructor-arg name="poolConfig" ref="jedisPoolConfig"></constructor-arg>
     </bean>
 
